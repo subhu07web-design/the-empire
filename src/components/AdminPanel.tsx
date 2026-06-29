@@ -118,16 +118,20 @@ export default function AdminPanel({
           </div>
 
           <form onSubmit={handleLoginSubmit} className="space-y-4" autoComplete="off">
+            {/* Decoy inputs to absorb greedy browser autofill systems */}
+            <input type="text" name="username" style={{ display: "none" }} tabIndex={-1} />
+            <input type="password" name="password" style={{ display: "none" }} tabIndex={-1} />
+
             <div>
               <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
                 Admin Email Address
               </label>
               <input
                 required
-                type="email"
-                placeholder="Enter Admin Email"
+                type="text"
+                placeholder="Enter Admin ID"
                 value={email}
-                autoComplete="off"
+                autoComplete="new-email"
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs focus:outline-none focus:border-amber-500 text-slate-200 placeholder:text-slate-600"
               />
@@ -139,11 +143,12 @@ export default function AdminPanel({
               </label>
               <input
                 required
-                type="password"
+                type="text"
                 placeholder="Enter Password"
                 value={password}
                 autoComplete="new-password"
                 onChange={(e) => setPassword(e.target.value)}
+                style={{ WebkitTextSecurity: "disc" } as React.CSSProperties}
                 className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs focus:outline-none focus:border-amber-500 text-slate-200 placeholder:text-slate-600"
               />
             </div>
