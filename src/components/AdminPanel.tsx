@@ -117,7 +117,7 @@ export default function AdminPanel({
             </p>
           </div>
 
-          <form onSubmit={handleLoginSubmit} className="space-y-4">
+          <form onSubmit={handleLoginSubmit} className="space-y-4" autoComplete="off">
             <div>
               <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
                 Admin Email Address
@@ -125,10 +125,11 @@ export default function AdminPanel({
               <input
                 required
                 type="email"
-                placeholder="subhu7web@gmail.com"
+                placeholder="Enter Admin Email"
                 value={email}
+                autoComplete="off"
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs focus:outline-none focus:border-amber-500 text-slate-200 placeholder:text-slate-700"
+                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs focus:outline-none focus:border-amber-500 text-slate-200 placeholder:text-slate-600"
               />
             </div>
 
@@ -139,10 +140,11 @@ export default function AdminPanel({
               <input
                 required
                 type="password"
-                placeholder="••••••••"
+                placeholder="Enter Password"
                 value={password}
+                autoComplete="new-password"
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs focus:outline-none focus:border-amber-500 text-slate-200 placeholder:text-slate-700"
+                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs focus:outline-none focus:border-amber-500 text-slate-200 placeholder:text-slate-600"
               />
             </div>
 
