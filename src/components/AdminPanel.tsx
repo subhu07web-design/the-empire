@@ -364,10 +364,48 @@ export default function AdminPanel({
                             <span className="text-amber-500">₹{order.totalAmount}</span>
                           </div>
                         </div>
+
+                        {/* Live Status Pipeline/Stepper */}
+                        {order.status === "Cancelled" ? (
+                          <div className="bg-red-950/15 border border-red-900/30 p-3 rounded-xl flex items-center gap-2 max-w-lg">
+                            <span className="text-xs text-red-400 font-extrabold">🚫 This order has been Cancelled</span>
+                          </div>
+                        ) : (
+                          <div className="bg-slate-950/50 border border-slate-850/60 p-3 rounded-xl max-w-lg">
+                            <span className="text-[9px] text-slate-500 font-black uppercase tracking-wider block mb-2">Live Order Stage</span>
+                            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px]">
+                              <div className="flex items-center gap-1">
+                                <span className={`w-2 h-2 rounded-full ${order.status === "Pending" ? "bg-amber-500 animate-pulse ring-4 ring-amber-500/20" : "bg-emerald-500"}`} />
+                                <span className={order.status === "Pending" ? "text-amber-400 font-black" : "text-slate-500 font-medium"}>Pending</span>
+                              </div>
+                              <span className="text-slate-800 font-bold">→</span>
+                              <div className="flex items-center gap-1">
+                                <span className={`w-2 h-2 rounded-full ${
+                                  order.status === "Preparing" ? "bg-blue-500 animate-pulse ring-4 ring-blue-500/20" : 
+                                  (order.status === "OutForDelivery" || order.status === "Completed") ? "bg-emerald-500" : "bg-slate-800"
+                                }`} />
+                                <span className={order.status === "Preparing" ? "text-blue-400 font-black" : "text-slate-500 font-medium"}>Preparing</span>
+                              </div>
+                              <span className="text-slate-800 font-bold">→</span>
+                              <div className="flex items-center gap-1">
+                                <span className={`w-2 h-2 rounded-full ${
+                                  order.status === "OutForDelivery" ? "bg-purple-500 animate-pulse ring-4 ring-purple-500/20" : 
+                                  order.status === "Completed" ? "bg-emerald-500" : "bg-slate-800"
+                                }`} />
+                                <span className={order.status === "OutForDelivery" ? "text-purple-400 font-black" : "text-slate-500 font-medium"}>Dispatched</span>
+                              </div>
+                              <span className="text-slate-800 font-bold">→</span>
+                              <div className="flex items-center gap-1">
+                                <span className={`w-2 h-2 rounded-full ${order.status === "Completed" ? "bg-emerald-500 ring-4 ring-emerald-500/20" : "bg-slate-800"}`} />
+                                <span className={order.status === "Completed" ? "text-emerald-400 font-black" : "text-slate-500 font-medium"}>Delivered</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       {/* Action status handlers */}
-                      <div className="md:self-stretch flex flex-col justify-between items-end gap-4 border-t md:border-t-0 md:border-l border-slate-850 pt-4 md:pt-0 md:pl-6">
+                      <div className="md:self-stretch flex flex-col justify-between items-end gap-4 border-t md:border-t-0 md:border-l border-slate-850 pt-4 md:pt-0 md:pl-6 min-w-[200px]">
                         <div className="text-right">
                           <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Payment Status</span>
                           <span className={`text-xs font-extrabold font-mono uppercase ${order.paymentStatus === 'Paid' ? 'text-emerald-400' : 'text-amber-400'}`}>
@@ -376,36 +414,59 @@ export default function AdminPanel({
                         </div>
 
                         {/* Status Updater Buttons */}
-                        <div className="space-y-1.5 w-full">
+                        <div className="space-y-2 w-full">
                           <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-1">Update Status</span>
-                          <div className="flex flex-wrap gap-1.5 justify-end">
+                          <div className="flex flex-col gap-1.5 w-full">
+                            {/* Prepare Button */}
                             <button
                               onClick={() => onUpdateOrderStatus(order.id, "Preparing")}
-                              disabled={order.status === "Preparing"}
-                              className="px-2.5 py-1.5 bg-blue-950/40 hover:bg-blue-900/40 text-blue-400 border border-blue-500/20 rounded-lg text-[10px] font-bold transition-colors"
+                              className={`w-full px-3 py-2 rounded-xl text-[11px] font-bold transition-all flex items-center justify-between ${
+                                order.status === "Preparing"
+                                  ? "bg-blue-500 text-slate-950 font-black shadow-lg shadow-blue-500/20 cursor-default"
+                                  : "bg-slate-950 hover:bg-blue-950/40 text-blue-400 border border-blue-500/20 hover:border-blue-500/40"
+                              }`}
                             >
-                              Prepare
+                              <span>🧑‍🍳 Prepare Order</span>
+                              {order.status === "Preparing" && <span className="text-xs bg-slate-950/20 px-1.5 py-0.5 rounded font-black">ACTIVE</span>}
                             </button>
+
+                            {/* Dispatch Button */}
                             <button
                               onClick={() => onUpdateOrderStatus(order.id, "OutForDelivery")}
-                              disabled={order.status === "OutForDelivery"}
-                              className="px-2.5 py-1.5 bg-purple-950/40 hover:bg-purple-900/40 text-purple-400 border border-purple-500/20 rounded-lg text-[10px] font-bold transition-colors"
+                              className={`w-full px-3 py-2 rounded-xl text-[11px] font-bold transition-all flex items-center justify-between ${
+                                order.status === "OutForDelivery"
+                                  ? "bg-purple-500 text-white font-black shadow-lg shadow-purple-500/20 cursor-default"
+                                  : "bg-slate-950 hover:bg-purple-950/40 text-purple-400 border border-purple-500/20 hover:border-purple-500/40"
+                              }`}
                             >
-                              Dispatch
+                              <span>🛵 Dispatch (Out)</span>
+                              {order.status === "OutForDelivery" && <span className="text-xs bg-black/20 px-1.5 py-0.5 rounded font-black">ACTIVE</span>}
                             </button>
+
+                            {/* Complete Button */}
                             <button
                               onClick={() => onUpdateOrderStatus(order.id, "Completed")}
-                              disabled={order.status === "Completed"}
-                              className="px-2.5 py-1.5 bg-emerald-950/40 hover:bg-emerald-900/40 text-emerald-400 border border-emerald-500/20 rounded-lg text-[10px] font-bold transition-colors"
+                              className={`w-full px-3 py-2 rounded-xl text-[11px] font-bold transition-all flex items-center justify-between ${
+                                order.status === "Completed"
+                                  ? "bg-emerald-500 text-slate-950 font-black shadow-lg shadow-emerald-500/20 cursor-default"
+                                  : "bg-slate-950 hover:bg-emerald-950/40 text-emerald-400 border border-emerald-500/20 hover:border-emerald-500/40"
+                              }`}
                             >
-                              Complete
+                              <span>✅ Complete / Delivered</span>
+                              {order.status === "Completed" && <span className="text-xs bg-slate-950/20 px-1.5 py-0.5 rounded font-black">ACTIVE</span>}
                             </button>
+
+                            {/* Cancel Button */}
                             <button
                               onClick={() => onUpdateOrderStatus(order.id, "Cancelled")}
-                              disabled={order.status === "Cancelled"}
-                              className="px-2.5 py-1.5 bg-red-950/40 hover:bg-red-900/40 text-red-450 border border-red-500/20 rounded-lg text-[10px] font-bold transition-colors"
+                              className={`w-full px-3 py-2 rounded-xl text-[11px] font-bold transition-all flex items-center justify-between ${
+                                order.status === "Cancelled"
+                                  ? "bg-red-550 text-white font-black shadow-lg shadow-red-500/20 cursor-default"
+                                  : "bg-slate-950 hover:bg-red-950/40 text-red-400 border border-red-500/20 hover:border-red-500/40"
+                              }`}
                             >
-                              Cancel
+                              <span>❌ Cancel Order</span>
+                              {order.status === "Cancelled" && <span className="text-xs bg-black/20 px-1.5 py-0.5 rounded font-black">ACTIVE</span>}
                             </button>
                           </div>
                         </div>
