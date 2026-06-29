@@ -1,0 +1,8 @@
+{
+  "firestore": [
+    {
+      "database": "ai-studio-theempire-7c0f1c87-7059-4031-958b-24d64760a421",
+      "rules": "firestore.rules"
+    }
+  ]
+}

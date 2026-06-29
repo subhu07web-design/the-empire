@@ -1,0 +1,6 @@
+{
+  "name": "The Empire",
+  "description": "Attractive, modern and professional restaurant booking app with menu ordering, real-time admin panel, table reservation, feedback, and mobile notifications.",
+  "requestFramePermissions": ["notifications"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

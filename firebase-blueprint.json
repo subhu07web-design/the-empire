@@ -1,0 +1,95 @@
+{
+  "entities": {
+    "MenuItem": {
+      "title": "MenuItem",
+      "description": "An item in the restaurant menu",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "number" },
+        "category": { "type": "string" },
+        "image": { "type": "string" },
+        "rating": { "type": "number" },
+        "isVegetarian": { "type": "boolean" },
+        "isPopular": { "type": "boolean" },
+        "prepTime": { "type": "string" }
+      },
+      "required": ["name", "price", "category"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "An order placed by a customer",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "totalAmount": { "type": "number" },
+        "status": { "type": "string" },
+        "timestamp": { "type": "object" },
+        "tableNumber": { "type": "string" },
+        "paymentMethod": { "type": "string" },
+        "paymentStatus": { "type": "string" },
+        "phone": { "type": "string" }
+      },
+      "required": ["userId", "userName", "userEmail", "totalAmount", "status"]
+    },
+    "Reservation": {
+      "title": "Reservation",
+      "description": "A table reservation",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "userPhone": { "type": "string" },
+        "date": { "type": "string" },
+        "time": { "type": "string" },
+        "guests": { "type": "number" },
+        "tableNumber": { "type": "string" },
+        "status": { "type": "string" },
+        "timestamp": { "type": "object" },
+        "specialRequests": { "type": "string" }
+      },
+      "required": ["userId", "userName", "userEmail", "userPhone", "date", "time", "guests", "tableNumber", "status"]
+    },
+    "Feedback": {
+      "title": "Feedback",
+      "description": "Customer feedback",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "rating": { "type": "number" },
+        "comment": { "type": "string" },
+        "timestamp": { "type": "object" },
+        "orderId": { "type": "string" }
+      },
+      "required": ["userId", "userName", "userEmail", "rating", "comment"]
+    }
+  },
+  "firestore": {
+    "menu": {
+      "schema": "MenuItem",
+      "description": "The menu items offered by the restaurant"
+    },
+    "orders": {
+      "schema": "Order",
+      "description": "Orders placed by customers"
+    },
+    "reservations": {
+      "schema": "Reservation",
+      "description": "Table bookings made by customers"
+    },
+    "feedbacks": {
+      "schema": "Feedback",
+      "description": "Feedback submitted by customers"
+    }
+  }
+}
