@@ -8,11 +8,47 @@ import MenuSection from "./components/MenuSection";
 import TableBooking from "./components/TableBooking";
 import FeedbackSection from "./components/Feedback";
 import AdminPanel from "./components/AdminPanel";
+import OrderTracker from "./components/OrderTracker";
 import Cart from "./components/Cart";
 import FloatingButtons from "./components/FloatingButtons";
 import { NotificationBanner } from "./components/NotificationCenter";
 import { LogIn, User, MapPin, Phone, Mail, Clock, ShieldCheck, Utensils, MessageSquare } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+
+const playChimeSound = () => {
+  try {
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContextClass) return;
+    const audioCtx = new AudioContextClass();
+    const now = audioCtx.currentTime;
+    
+    const osc1 = audioCtx.createOscillator();
+    const gainNode1 = audioCtx.createGain();
+    osc1.type = "sine";
+    osc1.frequency.setValueAtTime(587.33, now); // D5
+    osc1.frequency.exponentialRampToValueAtTime(880.00, now + 0.15); // A5
+    gainNode1.gain.setValueAtTime(0.25, now);
+    gainNode1.gain.exponentialRampToValueAtTime(0.01, now + 0.55);
+    osc1.connect(gainNode1);
+    gainNode1.connect(audioCtx.destination);
+    osc1.start(now);
+    osc1.stop(now + 0.6);
+
+    const osc2 = audioCtx.createOscillator();
+    const gainNode2 = audioCtx.createGain();
+    osc2.type = "triangle";
+    osc2.frequency.setValueAtTime(440.00, now); // A4
+    osc2.frequency.exponentialRampToValueAtTime(659.25, now + 0.15); // E5
+    gainNode2.gain.setValueAtTime(0.15, now);
+    gainNode2.gain.exponentialRampToValueAtTime(0.01, now + 0.55);
+    osc2.connect(gainNode2);
+    gainNode2.connect(audioCtx.destination);
+    osc2.start(now);
+    osc2.stop(now + 0.6);
+  } catch (err) {
+    console.error("Failed to play chime audio:", err);
+  }
+};
 
 export default function App() {
   // Navigation tabs: "menu" | "booking" | "feedback" | "admin"
@@ -202,6 +238,19 @@ export default function App() {
               `Your order #${newOrder.id.slice(-5)} is now [${newOrder.status}].`
             );
           }
+
+          // Trigger notification for admin subhu07web@gmail.com on receiving a new order
+          if (!oldOrder) {
+            const isAdminUser = isAdmin || (userEmail && (userEmail.toLowerCase().trim() === "subhu07web@gmail.com" || userEmail.toLowerCase().trim() === "subhu7web@gmail.com"));
+            if (isAdminUser) {
+              triggerNotification(
+                "order",
+                `🔔 New Order Received!`,
+                `Order #${newOrder.id.slice(-5)} for ₹${newOrder.totalAmount} has been placed by ${newOrder.userName || 'Customer'}.`
+              );
+              playChimeSound();
+            }
+          }
         });
       }
 
@@ -380,6 +429,9 @@ export default function App() {
       // Clean cart
       setCartItems([]);
 
+      // Redirect user to the Live Tracking Hub instantly so they can watch live status updates!
+      setActiveTab("tracking");
+
       // Push Notification
       triggerNotification(
         "order",
@@ -422,6 +474,9 @@ export default function App() {
 
     try {
       await addDoc(collection(db, "reservations"), reservationPayload);
+
+      // Redirect user to the Live Tracking Hub
+      setActiveTab("tracking");
 
       // Push Notification
       triggerNotification(
@@ -599,6 +654,15 @@ export default function App() {
             feedbacks={feedbacks}
             onAddFeedback={handleAddFeedback}
             defaultUserEmail={userEmail || ""}
+          />
+        )}
+
+        {activeTab === "tracking" && (
+          <OrderTracker
+            orders={orders}
+            reservations={reservations}
+            defaultUserEmail={userEmail || ""}
+            onOpenLoginModal={() => setIsLoginModalOpen(true)}
           />
         )}
 

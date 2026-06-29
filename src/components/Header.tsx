@@ -80,6 +80,17 @@ export default function Header({
               Table Reservation
             </button>
             <button
+              id="nav-tracking-btn"
+              onClick={() => setActiveTab("tracking")}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                activeTab === "tracking"
+                  ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                  : "text-slate-300 hover:text-white hover:bg-slate-900 border border-transparent"
+              }`}
+            >
+              Track Orders
+            </button>
+            <button
               id="nav-feedback-btn"
               onClick={() => setActiveTab("feedback")}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
@@ -185,7 +196,15 @@ export default function Header({
               activeTab === "booking" ? "text-amber-400 bg-slate-900" : "text-slate-400"
             }`}
           >
-            Reserve Table
+            Book Table
+          </button>
+          <button
+            onClick={() => setActiveTab("tracking")}
+            className={`text-xs font-semibold px-2 py-1.5 rounded-md transition-all ${
+              activeTab === "tracking" ? "text-amber-400 bg-slate-900" : "text-slate-400"
+            }`}
+          >
+            Track
           </button>
           <button
             onClick={() => setActiveTab("feedback")}
