@@ -15,6 +15,7 @@ interface HeaderProps {
   onAdminLogout: () => void;
   userEmail: string | null;
   onOpenLoginModal: () => void;
+  onUserLogout: () => void;
 }
 
 export default function Header({
@@ -29,6 +30,7 @@ export default function Header({
   onAdminLogout,
   userEmail,
   onOpenLoginModal,
+  onUserLogout,
 }: HeaderProps) {
   return (
     <header className="sticky top-0 z-40 bg-slate-950/90 backdrop-blur-md border-b border-slate-900 text-white">
@@ -132,25 +134,36 @@ export default function Header({
               <button
                 id="admin-logout-btn"
                 onClick={onAdminLogout}
-                className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-red-950/40 border border-red-500/30 text-red-300 hover:bg-red-900/40 rounded-lg text-xs font-semibold transition-all"
+                className="flex items-center gap-1.5 px-2 md:px-3 py-1.5 bg-red-950/40 border border-red-500/30 text-red-300 hover:bg-red-900/40 rounded-lg text-[10px] md:text-xs font-semibold transition-all"
                 title="Logout from Admin"
               >
                 <LogOut className="w-3.5 h-3.5" />
-                Logout Admin
+                <span className="hidden sm:inline">Logout Admin</span>
+                <span className="sm:hidden">Logout</span>
               </button>
             ) : userEmail ? (
-              <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs font-semibold text-slate-300">
-                <User className="w-3.5 h-3.5 text-amber-500" />
-                <span className="max-w-[100px] truncate">{userEmail.split('@')[0]}</span>
+              <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1 px-2 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-[10px] md:text-xs font-semibold text-slate-300">
+                  <User className="w-3.5 h-3.5 text-amber-500" />
+                  <span className="max-w-[55px] sm:max-w-[100px] truncate">{userEmail.split('@')[0]}</span>
+                </div>
+                <button
+                  id="user-logout-btn"
+                  onClick={onUserLogout}
+                  className="flex items-center justify-center p-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-400 hover:text-red-400 transition-all"
+                  title="Sign Out"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                </button>
               </div>
             ) : (
               <button
                 id="header-login-btn"
                 onClick={onOpenLoginModal}
-                className="hidden lg:flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white rounded-lg text-xs font-semibold transition-all"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white rounded-lg text-[10px] md:text-xs font-semibold transition-all"
               >
                 <LogIn className="w-3.5 h-3.5 text-amber-500" />
-                Sign In
+                <span>Sign In</span>
               </button>
             )}
           </div>

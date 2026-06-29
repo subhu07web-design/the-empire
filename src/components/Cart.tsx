@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { X, Trash2, ShoppingBag, CreditCard, ChevronRight, User, Phone, MapPin, CheckCircle2 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { CartItem, MenuItem } from "../types";
@@ -31,15 +31,32 @@ export default function Cart({
   defaultUserEmail = "",
 }: CartProps) {
   const [step, setStep] = useState<1 | 2>(1); // 1 = Cart details, 2 = Checkout details
-  const [userName, setUserName] = useState<string>("");
-  const [userEmail, setUserEmail] = useState<string>(defaultUserEmail);
-  const [phone, setPhone] = useState<string>("");
+  const [userName, setUserName] = useState<string>(() => localStorage.getItem("empire_userName") || "");
+  const [userEmail, setUserEmail] = useState<string>(() => defaultUserEmail || localStorage.getItem("empire_userEmail") || "");
+  const [phone, setPhone] = useState<string>(() => localStorage.getItem("empire_userPhone") || "");
   const [tableNumber, setTableNumber] = useState<string>("");
   const [deliveryMethod, setDeliveryMethod] = useState<'DineIn' | 'Delivery' | 'Takeaway'>("DineIn");
   const [address, setAddress] = useState<string>("");
   const [paymentMethod, setPaymentMethod] = useState<'Cash' | 'Card' | 'UPI'>("UPI");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+
+  useEffect(() => {
+    if (defaultUserEmail) {
+      setUserEmail(defaultUserEmail);
+    }
+  }, [defaultUserEmail]);
+
+  useEffect(() => {
+    const savedName = localStorage.getItem("empire_userName");
+    if (savedName && !userName) {
+      setUserName(savedName);
+    }
+    const savedPhone = localStorage.getItem("empire_userPhone");
+    if (savedPhone && !phone) {
+      setPhone(savedPhone);
+    }
+  }, []);
 
   const subtotal = cartItems.reduce((acc, item) => acc + item.menuItem.price * item.quantity, 0);
   const serviceCharge = subtotal > 0 ? 30 : 0;
@@ -63,12 +80,17 @@ export default function Cart({
         deliveryMethod,
         address: deliveryMethod === "Delivery" ? address : undefined,
       });
+      // Save details to localStorage
+      localStorage.setItem("empire_userName", userName);
+      localStorage.setItem("empire_userEmail", userEmail);
+      localStorage.setItem("empire_userPhone", phone);
+
       setIsSuccess(true);
       setTimeout(() => {
         setIsSuccess(false);
         setStep(1);
         onClose();
-      }, 3500);
+      }, 3000);
     } catch (err) {
       console.error(err);
     } finally {

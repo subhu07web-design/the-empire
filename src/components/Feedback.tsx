@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { MessageSquare, Star, User, Quote, Sparkles, CheckCircle2 } from "lucide-react";
 import { motion } from "motion/react";
 import { Feedback as FeedbackType } from "../types";
@@ -15,13 +15,26 @@ interface FeedbackProps {
 }
 
 export default function Feedback({ feedbacks, onAddFeedback, defaultUserEmail = "" }: FeedbackProps) {
-  const [userName, setUserName] = useState("");
-  const [userEmail, setUserEmail] = useState(defaultUserEmail);
+  const [userName, setUserName] = useState(() => localStorage.getItem("empire_userName") || "");
+  const [userEmail, setUserEmail] = useState(() => defaultUserEmail || localStorage.getItem("empire_userEmail") || "");
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
   const [hoverRating, setHoverRating] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+
+  useEffect(() => {
+    if (defaultUserEmail) {
+      setUserEmail(defaultUserEmail);
+    }
+  }, [defaultUserEmail]);
+
+  useEffect(() => {
+    const savedName = localStorage.getItem("empire_userName");
+    if (savedName && !userName) {
+      setUserName(savedName);
+    }
+  }, []);
 
   // Math for reviews stats
   const totalReviews = feedbacks.length;
@@ -55,10 +68,13 @@ export default function Feedback({ feedbacks, onAddFeedback, defaultUserEmail = 
         rating,
         comment,
       });
+      // Save details to localStorage so they persist
+      localStorage.setItem("empire_userName", userName);
+      localStorage.setItem("empire_userEmail", userEmail);
+      
       setIsSuccess(true);
       setComment("");
       setRating(5);
-      setUserName("");
       setTimeout(() => setIsSuccess(false), 3000);
     } catch (err) {
       console.error(err);

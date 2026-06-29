@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Calendar as CalendarIcon, Clock, Users, Gift, Sofa, User, Phone, Mail, CheckCircle2 } from "lucide-react";
 import { motion } from "motion/react";
 
@@ -30,9 +30,9 @@ const TIME_SLOTS = [
 ];
 
 export default function TableBooking({ onBookTable, defaultUserEmail = "" }: TableBookingProps) {
-  const [userName, setUserName] = useState("");
-  const [userEmail, setUserEmail] = useState(defaultUserEmail);
-  const [userPhone, setUserPhone] = useState("");
+  const [userName, setUserName] = useState(() => localStorage.getItem("empire_userName") || "");
+  const [userEmail, setUserEmail] = useState(() => defaultUserEmail || localStorage.getItem("empire_userEmail") || "");
+  const [userPhone, setUserPhone] = useState(() => localStorage.getItem("empire_userPhone") || "");
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [guests, setGuests] = useState(2);
@@ -40,6 +40,23 @@ export default function TableBooking({ onBookTable, defaultUserEmail = "" }: Tab
   const [specialRequests, setSpecialRequests] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+
+  useEffect(() => {
+    if (defaultUserEmail) {
+      setUserEmail(defaultUserEmail);
+    }
+  }, [defaultUserEmail]);
+
+  useEffect(() => {
+    const savedName = localStorage.getItem("empire_userName");
+    if (savedName && !userName) {
+      setUserName(savedName);
+    }
+    const savedPhone = localStorage.getItem("empire_userPhone");
+    if (savedPhone && !userPhone) {
+      setUserPhone(savedPhone);
+    }
+  }, []);
 
   // Set minimum date to today
   const today = new Date().toISOString().split("T")[0];
@@ -60,9 +77,13 @@ export default function TableBooking({ onBookTable, defaultUserEmail = "" }: Tab
         tableNumber: selectedTable,
         specialRequests,
       });
+      // Save details to localStorage so they persist
+      localStorage.setItem("empire_userName", userName);
+      localStorage.setItem("empire_userEmail", userEmail);
+      localStorage.setItem("empire_userPhone", userPhone);
+      
       setIsSuccess(true);
-      // Reset form fields
-      setUserName("");
+      // Reset only booking details, keep user details filled!
       setSpecialRequests("");
       setSelectedTable("");
       setTime("");

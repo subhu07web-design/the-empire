@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Bell, X, ShieldAlert, ShoppingBag, Calendar, MessageSquare, Info } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { AppNotification } from "../types";
@@ -154,14 +154,20 @@ export function NotificationBanner({
   activeNotif: AppNotification | null;
   onDismiss: () => void;
 }) {
+  const onDismissRef = useRef(onDismiss);
+  
+  useEffect(() => {
+    onDismissRef.current = onDismiss;
+  }, [onDismiss]);
+
   useEffect(() => {
     if (activeNotif) {
       const timer = setTimeout(() => {
-        onDismiss();
+        onDismissRef.current();
       }, 5000);
       return () => clearTimeout(timer);
     }
-  }, [activeNotif, onDismiss]);
+  }, [activeNotif?.id]);
 
   if (!activeNotif) return null;
 

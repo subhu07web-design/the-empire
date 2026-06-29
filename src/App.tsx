@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { collection, query, onSnapshot, addDoc, updateDoc, doc, getDocs, deleteDoc, orderBy } from "firebase/firestore";
 import { db, OperationType, handleFirestoreError } from "./firebase";
 import { INITIAL_MENU } from "./data/menu";
@@ -24,24 +24,73 @@ export default function App() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
+
+  // Refs to keep stable copies of state for use inside onSnapshot listeners without recreating subscription
+  const ordersRef = useRef<Order[]>([]);
+  const reservationsRef = useRef<Reservation[]>([]);
+
+  useEffect(() => {
+    ordersRef.current = orders;
+  }, [orders]);
+
+  useEffect(() => {
+    reservationsRef.current = reservations;
+  }, [reservations]);
   
   // Local active state
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState<boolean>(() => {
+    return localStorage.getItem("empire_isAdmin") === "true";
+  });
+  const [userEmail, setUserEmail] = useState<string | null>(() => {
+    return localStorage.getItem("empire_userEmail");
+  });
   
   // Mobile Notification Banner simulation
   const [activeNotification, setActiveNotification] = useState<AppNotification | null>(null);
 
   // Authentication/Identity simulation
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [loginEmail, setLoginEmail] = useState("");
-  const [loginName, setLoginName] = useState("");
+  const [loginEmail, setLoginEmail] = useState(() => {
+    return localStorage.getItem("empire_loginEmail") || "";
+  });
+  const [loginName, setLoginName] = useState(() => {
+    return localStorage.getItem("empire_loginName") || "";
+  });
 
   // Contact details
   const empirePhone = "+919999900000";
   const empireWhatsApp = "+919999900000";
+
+  // Write state changes to localStorage
+  useEffect(() => {
+    if (userEmail) {
+      localStorage.setItem("empire_userEmail", userEmail);
+    } else {
+      localStorage.removeItem("empire_userEmail");
+    }
+  }, [userEmail]);
+
+  useEffect(() => {
+    localStorage.setItem("empire_isAdmin", isAdmin ? "true" : "false");
+  }, [isAdmin]);
+
+  useEffect(() => {
+    if (loginEmail) {
+      localStorage.setItem("empire_loginEmail", loginEmail);
+    } else {
+      localStorage.removeItem("empire_loginEmail");
+    }
+  }, [loginEmail]);
+
+  useEffect(() => {
+    if (loginName) {
+      localStorage.setItem("empire_loginName", loginName);
+    } else {
+      localStorage.removeItem("empire_loginName");
+    }
+  }, [loginName]);
 
   // 1. Synchronize Menu Items from Firestore with Robust Seeding & De-duplication
   useEffect(() => {
@@ -142,9 +191,10 @@ export default function App() {
       });
       
       // Real-time Push Notification trigger logic for User/Customer when Order Status changes!
-      if (orders.length > 0 && ordersList.length > 0) {
+      const currentOrders = ordersRef.current;
+      if (currentOrders.length > 0 && ordersList.length > 0) {
         ordersList.forEach((newOrder) => {
-          const oldOrder = orders.find((o) => o.id === newOrder.id);
+          const oldOrder = currentOrders.find((o) => o.id === newOrder.id);
           if (oldOrder && oldOrder.status !== newOrder.status) {
             triggerNotification(
               "order",
@@ -160,7 +210,7 @@ export default function App() {
       handleFirestoreError(error, OperationType.LIST, "orders");
     });
     return () => unsubscribe();
-  }, [orders]);
+  }, []);
 
   // 3. Synchronize Table Reservations in Real Time
   useEffect(() => {
@@ -178,9 +228,10 @@ export default function App() {
       });
 
       // Real-time notification trigger when Reservation Status changes!
-      if (reservations.length > 0 && resList.length > 0) {
+      const currentReservations = reservationsRef.current;
+      if (currentReservations.length > 0 && resList.length > 0) {
         resList.forEach((newRes) => {
-          const oldRes = reservations.find((r) => r.id === newRes.id);
+          const oldRes = currentReservations.find((r) => r.id === newRes.id);
           if (oldRes && oldRes.status !== newRes.status) {
             triggerNotification(
               "booking",
@@ -196,7 +247,7 @@ export default function App() {
       handleFirestoreError(error, OperationType.LIST, "reservations");
     });
     return () => unsubscribe();
-  }, [reservations]);
+  }, []);
 
   // 4. Synchronize Feedback Logs in Real Time
   useEffect(() => {
@@ -488,6 +539,16 @@ export default function App() {
     }
   };
 
+  const handleUserLogout = () => {
+    setUserEmail(null);
+    setLoginEmail("");
+    setLoginName("");
+    localStorage.removeItem("empire_userEmail");
+    localStorage.removeItem("empire_loginEmail");
+    localStorage.removeItem("empire_loginName");
+    triggerNotification("system", "Identity Disconnected", "Signed out successfully.");
+  };
+
   return (
     <div className="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased relative">
       
@@ -514,6 +575,7 @@ export default function App() {
         onAdminLogout={handleAdminLogout}
         userEmail={userEmail}
         onOpenLoginModal={() => setIsLoginModalOpen(true)}
+        onUserLogout={handleUserLogout}
       />
 
       {/* Body Views Render */}
