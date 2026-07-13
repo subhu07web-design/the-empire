@@ -1,5 +1,17 @@
 {
   "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile document linked to authentication ID",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "createdAt": { "type": "object" }
+      },
+      "required": ["uid", "email"]
+    },
     "MenuItem": {
       "title": "MenuItem",
       "description": "An item in the restaurant menu",
@@ -75,6 +87,10 @@
     }
   },
   "firestore": {
+    "users/{userId}": {
+      "schema": "User",
+      "description": "User profile document linked to authentication ID"
+    },
     "menu": {
       "schema": "MenuItem",
       "description": "The menu items offered by the restaurant"

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
-import { collection, query, onSnapshot, addDoc, updateDoc, doc, getDocs, deleteDoc, orderBy } from "firebase/firestore";
-import { db, OperationType, handleFirestoreError } from "./firebase";
+import { collection, query, onSnapshot, addDoc, updateDoc, doc, getDocs, deleteDoc, orderBy, where } from "firebase/firestore";
+import { db, OperationType, handleFirestoreError, auth } from "./firebase";
+import { onAuthStateChanged, signInAnonymously, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "firebase/auth";
 import { INITIAL_MENU } from "./data/menu";
 import { MenuItem, CartItem, Order, Reservation, Feedback, AppNotification, OrderStatus, ReservationStatus } from "./types";
 import Header from "./components/Header";
@@ -82,6 +83,8 @@ export default function App() {
   const [userEmail, setUserEmail] = useState<string | null>(() => {
     return localStorage.getItem("empire_userEmail");
   });
+  const [currentUserUid, setCurrentUserUid] = useState<string | null>(null);
+  const [isAuthNotEnabled, setIsAuthNotEnabled] = useState<boolean>(false);
   
   // Mobile Notification Banner simulation
   const [activeNotification, setActiveNotification] = useState<AppNotification | null>(null);
@@ -127,6 +130,50 @@ export default function App() {
       localStorage.removeItem("empire_loginName");
     }
   }, [loginName]);
+
+  // Synchronize with Firebase Auth state
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        setCurrentUserUid(user.uid);
+        if (user.email) {
+          const lowerEmail = user.email.toLowerCase().trim();
+          if (lowerEmail === "subhu07web@gmail.com" || lowerEmail === "subhu7web@gmail.com") {
+            setIsAdmin(true);
+          }
+        }
+      } else {
+        setCurrentUserUid(null);
+        try {
+          await signInAnonymously(auth);
+        } catch (e: any) {
+          if (e.code === "auth/operation-not-allowed" || (e.message && e.message.includes("operation-not-allowed"))) {
+            setIsAuthNotEnabled(true);
+          }
+          console.warn("Firebase Anonymous Auth restricted, attempting shared guest session fallback:", e.message || e);
+          try {
+            const guestEmail = "anonymous-guest@theempire.com";
+            const guestPass = "GuestPass2026!";
+            try {
+              await signInWithEmailAndPassword(auth, guestEmail, guestPass);
+            } catch (err: any) {
+              if (err.code === "auth/user-not-found" || err.code === "auth/invalid-credential" || err.message.includes("not-found") || err.message.includes("credential")) {
+                await createUserWithEmailAndPassword(auth, guestEmail, guestPass);
+              } else {
+                throw err;
+              }
+            }
+          } catch (fallbackErr: any) {
+            if (fallbackErr.code === "auth/operation-not-allowed" || (fallbackErr.message && fallbackErr.message.includes("operation-not-allowed"))) {
+              setIsAuthNotEnabled(true);
+            }
+            console.warn("Fallback guest authentication bypassed due to provider status:", fallbackErr.message || fallbackErr);
+          }
+        }
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   // 1. Synchronize Menu Items from Firestore with Robust Seeding & De-duplication
   useEffect(() => {
@@ -213,7 +260,15 @@ export default function App() {
 
   // 2. Synchronize Orders in Real Time
   useEffect(() => {
-    const q = query(collection(db, "orders"));
+    if (!currentUserUid && !isAdmin) {
+      setOrders([]);
+      return;
+    }
+
+    const q = isAdmin
+      ? query(collection(db, "orders"))
+      : query(collection(db, "orders"), where("userId", "==", currentUserUid));
+
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const ordersList: Order[] = [];
       snapshot.forEach((doc) => {
@@ -259,11 +314,19 @@ export default function App() {
       handleFirestoreError(error, OperationType.LIST, "orders");
     });
     return () => unsubscribe();
-  }, []);
+  }, [isAdmin, currentUserUid, userEmail]);
 
   // 3. Synchronize Table Reservations in Real Time
   useEffect(() => {
-    const q = query(collection(db, "reservations"));
+    if (!currentUserUid && !isAdmin) {
+      setReservations([]);
+      return;
+    }
+
+    const q = isAdmin
+      ? query(collection(db, "reservations"))
+      : query(collection(db, "reservations"), where("userId", "==", currentUserUid));
+
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const resList: Reservation[] = [];
       snapshot.forEach((doc) => {
@@ -296,7 +359,7 @@ export default function App() {
       handleFirestoreError(error, OperationType.LIST, "reservations");
     });
     return () => unsubscribe();
-  }, []);
+  }, [isAdmin, currentUserUid, userEmail]);
 
   // 4. Synchronize Feedback Logs in Real Time
   useEffect(() => {
@@ -404,7 +467,7 @@ export default function App() {
     }
 
     const orderPayload = {
-      userId: userEmail || "guest_" + Math.random().toString(36).slice(2, 9),
+      userId: currentUserUid || auth.currentUser?.uid || "guest",
       userName: details.userName,
       userEmail: details.userEmail,
       phone: details.phone,
@@ -459,7 +522,7 @@ export default function App() {
     }
 
     const reservationPayload = {
-      userId: userEmail || "guest_" + Math.random().toString(36).slice(2, 9),
+      userId: currentUserUid || auth.currentUser?.uid || "guest",
       userName: details.userName,
       userEmail: details.userEmail,
       userPhone: details.userPhone,
@@ -501,7 +564,7 @@ export default function App() {
     }
 
     const feedbackPayload = {
-      userId: userEmail || "guest_" + Math.random().toString(36).slice(2, 9),
+      userId: currentUserUid || auth.currentUser?.uid || "guest",
       userName: details.userName,
       userEmail: details.userEmail,
       rating: details.rating,
@@ -527,6 +590,19 @@ export default function App() {
     // Custom admin entry restriction logic supporting both subhu7web@gmail.com and subhu07web@gmail.com
     const formattedEmail = email.toLowerCase().trim();
     if ((formattedEmail === "subhu7web@gmail.com" || formattedEmail === "subhu07web@gmail.com") && pass === "admin 2026") {
+      try {
+        try {
+          await signInWithEmailAndPassword(auth, formattedEmail, pass);
+        } catch (err: any) {
+          if (err.code === "auth/user-not-found" || err.code === "auth/invalid-credential" || err.message.includes("not-found") || err.message.includes("credential")) {
+            await createUserWithEmailAndPassword(auth, formattedEmail, pass);
+          } else {
+            throw err;
+          }
+        }
+      } catch (error) {
+        console.error("Admin Auth sync error:", error);
+      }
       setIsAdmin(true);
       triggerNotification(
         "system",
@@ -538,7 +614,12 @@ export default function App() {
     return false;
   };
 
-  const handleAdminLogout = () => {
+  const handleAdminLogout = async () => {
+    try {
+      await signOut(auth);
+    } catch (e) {
+      console.error("Admin signOut failed:", e);
+    }
     setIsAdmin(false);
     triggerNotification(
       "system",
@@ -585,16 +666,38 @@ export default function App() {
   };
 
   // Sign In modal helper
-  const handleUserLoginSubmit = (e: React.FormEvent) => {
+  const handleUserLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (loginEmail) {
-      setUserEmail(loginEmail);
-      setIsLoginModalOpen(false);
-      triggerNotification("system", "Identity Connected", `Logged in as ${loginEmail.split('@')[0]}.`);
+      try {
+        const dummyPassword = "UserPass2026!";
+        try {
+          await signInWithEmailAndPassword(auth, loginEmail, dummyPassword);
+        } catch (err: any) {
+          if (err.code === "auth/user-not-found" || err.code === "auth/invalid-credential" || err.message.includes("not-found") || err.message.includes("credential")) {
+            await createUserWithEmailAndPassword(auth, loginEmail, dummyPassword);
+          } else {
+            throw err;
+          }
+        }
+        setUserEmail(loginEmail);
+        setIsLoginModalOpen(false);
+        triggerNotification("system", "Identity Connected", `Logged in as ${loginEmail.split('@')[0]}.`);
+      } catch (error) {
+        console.error("User Auth sync error:", error);
+        // Fallback to local login if auth fails/is disabled
+        setUserEmail(loginEmail);
+        setIsLoginModalOpen(false);
+      }
     }
   };
 
-  const handleUserLogout = () => {
+  const handleUserLogout = async () => {
+    try {
+      await signOut(auth);
+    } catch (e) {
+      console.error("User signOut failed:", e);
+    }
     setUserEmail(null);
     setLoginEmail("");
     setLoginName("");
@@ -632,6 +735,23 @@ export default function App() {
         onOpenLoginModal={() => setIsLoginModalOpen(true)}
         onUserLogout={handleUserLogout}
       />
+
+      {isAuthNotEnabled && (
+        <div className="bg-gradient-to-r from-amber-950 to-orange-950 border-b border-amber-800/40 text-amber-200 text-xs py-3.5 px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg">
+          <div className="flex items-center gap-2.5">
+            <span className="p-1.5 bg-amber-500/10 text-amber-400 rounded-md shrink-0">⚠️</span>
+            <p className="leading-relaxed">
+              <strong>Firebase Authentication Setup Needed:</strong> Email/Password and Anonymous providers are currently disabled in your Firebase console. Go to <strong>Authentication &gt; Sign-in method</strong> and enable them so order synchronization and reservation features can run securely with Firestore rules.
+            </p>
+          </div>
+          <button 
+            onClick={() => setIsAuthNotEnabled(false)} 
+            className="text-amber-400 hover:text-amber-200 text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded bg-amber-900/30 hover:bg-amber-900/50 transition-colors shrink-0 self-end sm:self-auto"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Body Views Render */}
       <main className="min-h-[calc(100vh-160px)]">
